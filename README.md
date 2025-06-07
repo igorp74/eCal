@@ -8,14 +8,14 @@ Inspired by win Calendar application by Horst Schaeffer https://www.horstmuc.de/
  `calendar` [options]
 
 **Options**:
-|Flag|Description|
-|:--|:--|
-| `-events string` | Path to the events file. (default "events.txt") |
-| `-mondayFirst` | Set Monday as the first day of the week. (default true) |
-| `-month int` | Month for the calendar (1-12) (default: current month).|
-| `-week int` | Week number for the calendar (1-53). If used with -year, overrides -month.|
-| `-weeknumbers` | Show week numbers. (default true)|
-| `-year int` | Year for the calendar (default: current year). Also used with -week.|
+|Flag|Description|Default|
+|:--|:--|--:|
+| `-events string` | Path to the events file. | `"events.txt"` |
+| `-mondayFirst` | Set Monday as the first day of the week. | `true` |
+| `-month int` | Month for the calendar (1-12) | current month |
+| `-week int` | Week number for the calendar (1-53). If used with `-year`, overrides `-month`| |
+| `-weeknumbers` | Show week numbers. | `true` |
+| `-year int` | Year for the calendar. Also used with `-week`. | current year |
   
 **Examples**:
 
