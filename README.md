@@ -27,5 +27,5 @@ Inspired by win Calendar application by Horst Schaeffer https://www.horstmuc.de/
 
 **In action**
 
-![image](https://github.com/user-attachments/assets/e3217086-8e9a-47e2-a0a1-ef223f7672f3)
+![image](https://github.com/user-attachments/assets/2ec26067-4f1c-481b-bafd-bb93f168968d)
 
