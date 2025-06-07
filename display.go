@@ -130,10 +130,13 @@ func PrintCalendar(cfg Config, displayMonth time.Month, displayYear int, allEven
                 dayFormatted := ""
                 if isToday {
                     dayFormatted = fmt.Sprintf("%s%s%s%s ", fg_black, bg_yellow, dayStr, style_reset) // Highlight today's date
-                } else if isEventDay { // If it's an event day AND we have colors
+                } else if isEventDay && !isWeekend{ // If it's an event day and not weekend AND we have colors
                     // Apply both foreground and background colors if present
                     colorCodes := eventDisplayColors.FgColor + eventDisplayColors.BgColor
                     dayFormatted = fmt.Sprintf("%s%s%-3s%s", colorCodes, style_bold, dayStr, style_reset)
+                } else if isEventDay && isWeekend { // If it's an event day AND it is weekend
+                    // Apply both foreground and background colors if present
+                    dayFormatted = fmt.Sprintf("%s%s%-3s%s", style_bold, fg_red, dayStr, style_reset)
                 } else if isWeekend {
                     dayFormatted = fmt.Sprintf("%s%-3s%s", fg_red, dayStr, style_reset)
                 } else {
@@ -162,15 +165,18 @@ func PrintCalendar(cfg Config, displayMonth time.Month, displayYear int, allEven
     fmt.Printf("\n%sEvents for %s %d:%s\n", style_bold, displayMonth, displayYear, style_reset)
     foundEventsThisMonth := false
 
-    // Use a map to store unique events by date for the list below the calendar
-    uniqueEventsForList := make(map[time.Time]Event)
+    // Use a map to store unique events by date AND description for the list below the calendar
+    // The key will be a string combining date and description to ensure uniqueness.
+    uniqueEventsForList := make(map[string]Event)
     for _, e := range allEvents {
         if e.Date.Year() == displayYear && e.Date.Month() == displayMonth {
-            dateOnly := time.Date(e.Date.Year(), e.Date.Month(), e.Date.Day(), 0, 0, 0, 0, e.Date.Location())
-            // If we haven't added an event for this date yet, add it.
-            // This effectively keeps the first event encountered for a given date.
-            if _, exists := uniqueEventsForList[dateOnly]; !exists {
-                uniqueEventsForList[dateOnly] = e
+            // Normalize event date to remove time components for comparison, and use its string representation.
+            dateOnlyStr := time.Date(e.Date.Year(), e.Date.Month(), e.Date.Day(), 0, 0, 0, 0, e.Date.Location()).Format("2006-01-02")
+            // Create a composite key with date and description
+            compositeKey := dateOnlyStr + "::" + e.Description // Using "::" as a separator to minimize collision risk
+
+            if _, exists := uniqueEventsForList[compositeKey]; !exists {
+                uniqueEventsForList[compositeKey] = e
             }
         }
     }
