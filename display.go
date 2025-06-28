@@ -304,7 +304,7 @@ func PrintMultiMonthCalendar(cfg Config, startMonth time.Month, startYear int, a
         }
     }
     if !foundEvents {
-        fmt.Println(" No events in the displayed period.")
+        fmt.Println("No events in the displayed period.")
     }
     // fmt.Println()
 }
