@@ -10,6 +10,7 @@ Inspired by win Calendar application by Horst Schaeffer https://www.horstmuc.de/
 **Options**:
 |Flag|Description|Default|
 |:--|:--|--:|
+| `-display string` | What to display: 'calendar', 'events', or 'both' | "both" |
 | `-events string` | Path to the events file. | `"events.txt"` |
 | `-mondayFirst` | Set Monday as the first day of the week. | `true` |
 | `-month int` | Month for the calendar (1-12) | current month |
