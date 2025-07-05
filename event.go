@@ -22,13 +22,10 @@ var (
     // DD-MM-YYYY
     reIsoDate = regexp.MustCompile(`^(\d{1,2})-(\d{1,2})-(\d{4})$`)
 
-    // Modified regex to capture:
-    // Group 1: event type (e.g., "ie", "birthday")
-    // Group 2: optional foreground color name (e.g., "red", "magenta") if present after comma
-    // Group 3: optional background color name (e.g., "white", "blue") if present after second comma
-    // Group 4: the rest of the description
-    // It now handles: [type], [type,fg_color], or [type,fg_color,bg_color]
-    reEventTypeAndColor = regexp.MustCompile(`^\s*\[\s*([^,\]]+?)(?:,\s*([^,\]]+?))?(?:,\s*([^\]]+?))?\s*\]\s*(.*)$`)
+    // Regex to extract the bracketed configuration part and the remaining description.
+    // Group 1: content inside brackets (e.g., "type, fg_color, bg_color, emoji")
+    // Group 2: the rest of the description
+    reBracketedPart = regexp.MustCompile(`^\s*\[(.*?)\]\s*(.*)$`)
 )
 
 // parseEventDate attempts to parse a date string from an event file.
@@ -199,37 +196,49 @@ func LoadEvents(filePath string, yearContext int) ([]Event, error) {
         dateStr := strings.TrimSpace(parts[0])
         descPart := strings.TrimSpace(parts[1])
 
-        var eventType, eventDesc, fgColor, bgColor string
-        typeMatch := reEventTypeAndColor.FindStringSubmatch(descPart)
-        if len(typeMatch) >= 5 { // Expect at least 5 groups: full match, type, fg_color, bg_color, description
-            eventType = strings.TrimSpace(typeMatch[1])    // Group 1: event type
-            fgColorName := strings.TrimSpace(typeMatch[2]) // Group 2: optional fg color name
-            bgColorName := strings.TrimSpace(typeMatch[3]) // Group 3: optional bg color name
-            eventDesc = strings.TrimSpace(typeMatch[4])    // Group 4: the rest of the description
+        var eventType, eventDesc, fgColor, bgColor, emojiChar string
 
-            fgColor = GetFgColorCode(fgColorName)
-            bgColor = GetBgColorCode(bgColorName)
+        // Extract the bracketed configuration part and the remaining description
+        bracketMatches := reBracketedPart.FindStringSubmatch(descPart)
+        if len(bracketMatches) == 3 {
+            bracketContent := bracketMatches[1]      // e.g., "type, fg_color, bg_color, emoji"
+            eventDesc = strings.TrimSpace(bracketMatches[2]) // The actual description after brackets
 
-        } else if len(typeMatch) >= 4 { // Handles [type,fg_color]
-            eventType = strings.TrimSpace(typeMatch[1])
-            fgColorName := strings.TrimSpace(typeMatch[2])
-            eventDesc = strings.TrimSpace(typeMatch[3]) // Note: Group 3 is now the description here
+            // Parse the comma-separated parts within the brackets
+            partsInBracket := strings.Split(bracketContent, ",")
 
-            fgColor = GetFgColorCode(fgColorName)
-            bgColor = "" // No background color specified
-            
-        } else if len(typeMatch) >= 2 { // Handles [type]
-            eventType = strings.TrimSpace(typeMatch[1])
-            eventDesc = strings.TrimSpace(typeMatch[2]) // Note: Group 2 is now the description here
-            
-            fgColor = fg_green // Default foreground
-            bgColor = "" // No background color
+            if len(partsInBracket) > 0 {
+                eventType = strings.TrimSpace(partsInBracket[0])
+            } else {
+                eventType = "default" // Default type if nothing is specified
+            }
+
+            if len(partsInBracket) > 1 {
+                fgColor = GetFgColorCode(strings.TrimSpace(partsInBracket[1]))
+            } else {
+                fgColor = fg_white // Default foreground color
+            }
+
+            if len(partsInBracket) > 2 {
+                bgColor = GetBgColorCode(strings.TrimSpace(partsInBracket[2]))
+            } else {
+                bgColor = "" // Default to no background color
+            }
+
+            if len(partsInBracket) > 3 {
+                // The fourth part is assumed to be the emoji character
+                emojiChar = strings.TrimSpace(partsInBracket[3])
+            } else {
+                emojiChar = "" // No explicit emoji provided in config
+            }
+
         } else {
-            // Fallback for cases where [type] or [type,color] is not matched at all
-            eventDesc = descPart // No type or color found, use whole string as description
+            // No bracketed part found, treat the whole descPart as description
+            eventDesc = descPart
             eventType = "default"
             fgColor = fg_green // Default highlight color
-            bgColor = ""     // Default to no background color
+            bgColor = ""       // Default to no background color
+            emojiChar = ""     // No explicit emoji
             fmt.Fprintf(os.Stderr, "Warning (line %d): Event description format unexpected, treating as plain description: %s\n", lineNumber, descPart)
         }
 
@@ -269,8 +278,9 @@ func LoadEvents(filePath string, yearContext int) ([]Event, error) {
             BirthDate:        bDateVal, // Store the original birth date
             RecurrenceRule:   recRule,
             SpecificYearRule: specYearRule,
-            DisplayColor:     fgColor, // Store the determined foreground color
-            DisplayBgColor:   bgColor, // Store the determined background color
+            DisplayColor:     fgColor,   // Store the determined foreground color
+            DisplayBgColor:   bgColor,   // Store the determined background color
+            Emoji:            emojiChar, // Store the explicit emoji character
         }
         events = append(events, event)
     }
@@ -280,3 +290,4 @@ func LoadEvents(filePath string, yearContext int) ([]Event, error) {
     }
     return events, nil
 }
+

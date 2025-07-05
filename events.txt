@@ -1,9 +1,9 @@
 # My Events
-# Format: DateRule ;[type, [fg_color], [bg_color] ]  Description
+# Format: DateRule ;[type, [fg_color], [bg_color], [emoji] ] Description
 # DateRule can be:
 #   E           (Easter Sunday)
 #   E+N / E-N   (N days after/before Easter)
-#   MM/DOW#N    (Nth DOW of Month MM; DOW: 1=Mon..7=Sun, N:1-5. e.g. 5/1#1 is 1st Mon of May)
+#   MM/DOW#N    (Nth DOW of Month MM; DOW: 1=Mon..0=Sun, N:1-5. e.g. 5/1#1 is 1st Mon of May)
 #   MM/DD       (Annual event on MM/DD of current year)
 #   MM/DD?      (Same as MM/DD)
 #   MM/DD?YYYY  (Event on MM/DD of specified YYYY)
@@ -16,10 +16,11 @@
 
 # Holidays and non-working days in Republic of Ireland
 #------------------------------------------------------
-1/1?0+1   ;[ie, red] New Year's Day
-1/1?6+2   ;[ie, red] New Year's Day
+1/1?0+1   ;[ie, white,red,⏰🚀] New Year's Day
+1/1?6+2   ;[ie, red,,⏰🚀] New Year's Day
 2/1?0+1   ;[ie, red] St Brigid's Day
 2/1?6+2   ;[ie, red] St Brigid's Day
+2/1#1     ;[ie, red] St Brigid's Day
 3/17?6+2  ;[ie, red] St Patrick's Day
 3/17?0+1  ;[ie, red] St Patrick's Day
 E+1       ;[ie, red] Easter Monday Holiday
@@ -46,8 +47,8 @@ E+1       ;[ie, red] Easter Monday Holiday
 #-----------------------------------------
 E-2  ;[church] Good Friday
 
-10/31 ;[fun] Halloween
-2/14  ;[fun] Valentine's Day ❤️
+10/31 ;[fun,,,🎃] Halloween
+2/14  ;[fun,,,❤️] Valentine's Day
 
 3/7#5  ;[global] Summer Time (UTC+01:00) begins
 10/7#5 ;[global] Winter Time (UTC+00:00) begins 

@@ -22,3 +22,4 @@ func getDisplayMonthYear(cfg Config) (time.Month, int) {
     // Default to configured month and year (which might be current if not specified)
     return cfg.Month, cfg.Year
 }
+

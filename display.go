@@ -1,4 +1,5 @@
 package main
+
 import (
     "fmt"
     "regexp"
@@ -6,11 +7,13 @@ import (
     "strings"
     "time"
 )
+
 // Helper struct to hold both foreground and background colors for display
 type EventDisplayColors struct {
     FgColor string
     BgColor string
 }
+
 // pluralS returns "s" if count is not 1 or -1, otherwise returns an empty string.
 func pluralS(count int) string {
     if count == 1 || count == -1 {
@@ -18,22 +21,27 @@ func pluralS(count int) string {
     }
     return "s"
 }
+
 // ansiRegex is pre-compiled for efficiency to remove common ANSI escape codes.
 // This simpler regex targets the most common SGR (Select Graphic Rendition) codes.
 var ansiRegex = regexp.MustCompile("\x1b\\[[0-9;]*m")
+
 // removeANSI removes ANSI escape codes from a string to calculate its visible length.
 func removeANSI(s string) string {
     return ansiRegex.ReplaceAllString(s, "")
 }
+
 // GetMonthViewLines returns the lines for a single month's calendar view as a slice of strings.
 func GetMonthViewLines(cfg Config, displayMonth time.Month, displayYear int, allEvents []Event) []string {
     var lines []string
     firstOfMonth := time.Date(displayYear, displayMonth, 1, 0, 0, 0, 0, cfg.TargetTime.Location()) // Use target time's location for consistency
     lastOfMonth := firstOfMonth.AddDate(0, 1, -1)
     today := cfg.TargetTime // Use cfg.TargetTime for "today" consistency
+
     // Define the consistent visible width for the content area of a single month block.
     // Week Number Column (4 chars: " Wk " or " 22 ") + 7 Days (7 * 3 chars: " Mo ") = 4 + 21 = 25 visible characters.
     const monthBlockActualVisibleWidth = 25
+
     // Month/Year Header
     monthYearHeaderStr := fmt.Sprintf("%s %d", displayMonth.String(), displayYear)
     // Calculate padding needed to center the month/year string within monthBlockActualVisibleWidth
@@ -47,12 +55,14 @@ func GetMonthViewLines(cfg Config, displayMonth time.Month, displayYear int, all
         strings.Repeat(" ", rightPadding),
         style_reset)
     lines = append(lines, centeredMonthYearHeader)
+
     var daysHeader []string
     if cfg.MondayFirst {
         daysHeader = []string{"Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"}
     } else {
         daysHeader = []string{"Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"}
     }
+
     headerLine := ""
     // Week number column header (4 visible characters)
     if cfg.ShowWeekNum {
@@ -66,8 +76,9 @@ func GetMonthViewLines(cfg Config, displayMonth time.Month, displayYear int, all
     }
     // Pad the header line to ensure its visible length matches monthBlockActualVisibleWidth
     visibleHeaderLen := len(removeANSI(headerLine))
-    headerLine += strings.Repeat(" ", monthBlockActualVisibleWidth - visibleHeaderLen)
+    headerLine += strings.Repeat(" ", monthBlockActualVisibleWidth-visibleHeaderLen)
     lines = append(lines, headerLine) // Removed TrimRight
+
     // Create a map to store unique event dates and their display colors for the current month.
     uniqueEventDatesForHighlight := make(map[time.Time]EventDisplayColors)
     for _, ev := range allEvents {
@@ -83,11 +94,13 @@ func GetMonthViewLines(cfg Config, displayMonth time.Month, displayYear int, all
             }
         }
     }
+
     // Calculate starting weekday offset
     startDayOffset := int(firstOfMonth.Weekday()) // Sunday = 0, ..., Saturday = 6
     if cfg.MondayFirst {
         startDayOffset = (startDayOffset - 1 + 7) % 7 // Monday = 0, ..., Sunday = 6
     }
+
     currentDay := 1
     for weekRow := 0; ; weekRow++ {
         rowStr := ""
@@ -107,6 +120,7 @@ func GetMonthViewLines(cfg Config, displayMonth time.Month, displayYear int, all
                     dayForWeekCalc = approxDayInRow
                 }
             }
+
             // Only print week number if there are actual days from the month in this row or previous rows had days
             if currentDay <= lastOfMonth.Day() || (weekRow > 0 && (startDayOffset+lastOfMonth.Day()) > (weekRow*7)) {
                 _, weekNo := time.Date(displayYear, displayMonth, dayForWeekCalc, 0, 0, 0, 0, cfg.TargetTime.Location()).ISOWeek()
@@ -117,6 +131,7 @@ func GetMonthViewLines(cfg Config, displayMonth time.Month, displayYear int, all
         } else {
             rowStr += strings.Repeat(" ", 4) // Always 4 spaces for week number column alignment
         }
+
         hasDaysInRow := false
         for d := range 7 { // Iterate through 7 days of the week
             if weekRow == 0 && d < startDayOffset {
@@ -129,6 +144,7 @@ func GetMonthViewLines(cfg Config, displayMonth time.Month, displayYear int, all
                 isWeekend := false
                 currentDate := time.Date(displayYear, displayMonth, dayToPrint, 0, 0, 0, 0, cfg.TargetTime.Location())
                 isToday := currentDate.Year() == today.Year() && currentDate.Month() == today.Month() && currentDate.Day() == today.Day()
+
                 weekday := currentDate.Weekday()
                 if cfg.MondayFirst {
                     if weekday == time.Saturday || weekday == time.Sunday {
@@ -139,8 +155,10 @@ func GetMonthViewLines(cfg Config, displayMonth time.Month, displayYear int, all
                         isWeekend = true
                     }
                 }
+
                 eventDisplayColors, isEventDay := uniqueEventDatesForHighlight[currentDate]
                 dayStr := fmt.Sprintf("%2d", dayToPrint) // Format to 2 characters, e.g., " 1", "10"
+
                 // Apply colors/styles
                 coloredDayStr := dayStr
                 if isToday {
@@ -153,16 +171,19 @@ func GetMonthViewLines(cfg Config, displayMonth time.Month, displayYear int, all
                 } else if isWeekend {
                     coloredDayStr = fmt.Sprintf("%s%s%s", fg_red, dayStr, style_reset) // Just red for weekend
                 }
+
                 // Calculate visible length and pad explicitly to ensure each day block is 3 characters wide
                 visibleLen := len(removeANSI(coloredDayStr))
                 rowStr += coloredDayStr + strings.Repeat(" ", 3-visibleLen) // Each day block takes 3 visible spaces
                 currentDay++
             }
         }
+
         // Pad the entire row to ensure its visible length matches monthBlockActualVisibleWidth
         visibleRowLen := len(removeANSI(rowStr))
-        rowStr += strings.Repeat(" ", monthBlockActualVisibleWidth - visibleRowLen)
+        rowStr += strings.Repeat(" ", monthBlockActualVisibleWidth-visibleRowLen)
         lines = append(lines, rowStr) // Removed TrimRight
+
         // Break condition: if no days from the current month were printed in this row,
         // and we are past the first day of the month (currentDay > 1), then we are done.
         if !hasDaysInRow && currentDay > lastOfMonth.Day() {
@@ -177,14 +198,17 @@ func GetMonthViewLines(cfg Config, displayMonth time.Month, displayYear int, all
     }
     return lines
 }
-// PrintMultiMonthCalendar renders multiple monthly calendars and a combined event list.
-func PrintMultiMonthCalendar(cfg Config, startMonth time.Month, startYear int, allEvents []Event) {
+
+// PrintCalendar renders multiple monthly calendars.
+func PrintCalendar(cfg Config, startMonth time.Month, startYear int, allEvents []Event) {
     // Constants for layout
     const monthsPerRow = 3 // Number of months to display side-by-side
     // Use the same content width as GetMonthViewLines
     const monthBlockActualVisibleWidth = 25
     const interCalendarSpace = 4 // Spaces between each calendar block in a row
+
     var allMonthLines [][]string // Stores lines for each month: allMonthLines[monthIdx][lineIdx]
+
     // Generate lines for each individual month
     for i := 0; i < cfg.NumMonths; i++ {
         currentMonth := time.Month((int(startMonth)-1+i)%12 + 1)
@@ -192,6 +216,7 @@ func PrintMultiMonthCalendar(cfg Config, startMonth time.Month, startYear int, a
         monthLines := GetMonthViewLines(cfg, currentMonth, currentYear, allEvents)
         allMonthLines = append(allMonthLines, monthLines)
     }
+
     // Determine max height among all months for consistent alignment
     maxHeight := 0
     for _, lines := range allMonthLines {
@@ -199,6 +224,7 @@ func PrintMultiMonthCalendar(cfg Config, startMonth time.Month, startYear int, a
             maxHeight = len(lines)
         }
     }
+
     // Ensure all month views have the same height by padding with empty strings
     for i := range allMonthLines {
         for len(allMonthLines[i]) < maxHeight {
@@ -206,6 +232,8 @@ func PrintMultiMonthCalendar(cfg Config, startMonth time.Month, startYear int, a
             allMonthLines[i] = append(allMonthLines[i], strings.Repeat(" ", monthBlockActualVisibleWidth))
         }
     }
+
+    // fmt.Println() // Add an empty line before print calendar(s)
     // Print months in rows of `monthsPerRow`
     for i := 0; i < cfg.NumMonths; i += monthsPerRow {
         for lineIdx := 0; lineIdx < maxHeight; lineIdx++ {
@@ -231,25 +259,25 @@ func PrintMultiMonthCalendar(cfg Config, startMonth time.Month, startYear int, a
         }
         fmt.Println() // Add an empty line between rows of months
     }
-    // --- Combined Event List ---
+}
+
+// PrintEventList renders a combined event list for the displayed period.
+func PrintEventList(cfg Config, startMonth time.Month, startYear int, allEvents []Event) {
     fmt.Printf("%sEvents for displayed period:%s\n", style_bold, style_reset)
-    // fmt.Printf("-----------------------------\n")
     foundEvents := false
     uniqueEventsForList := make(map[string]Event)
+
+    // Determine the end month and year of the display range
+    endMonth := time.Month((int(startMonth)-1+cfg.NumMonths-1)%12 + 1)
+    endYear := startYear + ((int(startMonth)-1+cfg.NumMonths-1)/12)
+
+    startDate := time.Date(startYear, startMonth, 1, 0, 0, 0, 0, cfg.TargetTime.Location())
+    endDate := time.Date(endYear, endMonth, 1, 0, 0, 0, 0, cfg.TargetTime.Location()).AddDate(0, 1, -1) // Last day of the end month
+
     for _, e := range allEvents {
-        // Check if the event date falls within any of the displayed months/years
-        eventInDisplayedRange := false
-        // Determine the end month and year of the display range
-        endMonth := time.Month((int(startMonth)-1+cfg.NumMonths-1)%12 + 1)
-        endYear := startYear + ((int(startMonth)-1+cfg.NumMonths-1)/12)
-        // Check if the event falls within the date range
         eventDate := time.Date(e.Date.Year(), e.Date.Month(), e.Date.Day(), 0, 0, 0, 0, cfg.TargetTime.Location())
-        startDate := time.Date(startYear, startMonth, 1, 0, 0, 0, 0, cfg.TargetTime.Location())
-        endDate := time.Date(endYear, endMonth, 1, 0, 0, 0, 0, cfg.TargetTime.Location()).AddDate(0, 1, -1) // Last day of the end month
+
         if (eventDate.Equal(startDate) || eventDate.After(startDate)) && (eventDate.Equal(endDate) || eventDate.Before(endDate)) {
-            eventInDisplayedRange = true
-        }
-        if eventInDisplayedRange {
             dateOnlyStr := time.Date(e.Date.Year(), e.Date.Month(), e.Date.Day(), 0, 0, 0, 0, e.Date.Location()).Format("2006-01-02")
             compositeKey := dateOnlyStr + "::" + e.Description
             if _, exists := uniqueEventsForList[compositeKey]; !exists {
@@ -257,14 +285,17 @@ func PrintMultiMonthCalendar(cfg Config, startMonth time.Month, startYear int, a
             }
         }
     }
+
     var sortedUniqueEvents []Event
     for _, ev := range uniqueEventsForList {
         sortedUniqueEvents = append(sortedUniqueEvents, ev)
     }
+
     // Sort the events by date
     sort.Slice(sortedUniqueEvents, func(i, j int) bool {
         return sortedUniqueEvents[i].Date.Before(sortedUniqueEvents[j].Date)
     })
+
     if len(sortedUniqueEvents) > 0 {
         foundEvents = true
         for _, e := range sortedUniqueEvents {
@@ -277,9 +308,16 @@ func PrintMultiMonthCalendar(cfg Config, startMonth time.Month, startYear int, a
             case 3, 23:
                 daySuffix = "rd"
             }
-            emoji := getEmoji(e.Type)
+
+            // Use explicit emoji if provided, otherwise fall back to default based on type
+            displayEmoji := e.Emoji
+            if displayEmoji == "" {
+                displayEmoji = getDefaultEmoji(e.Type)
+            }
+
             // Use e.DisplayColor and e.DisplayBgColor for the event list output as well
-            fmt.Printf("%s%s%2d%s %s, %s %s: %s %s", e.DisplayColor, e.DisplayBgColor, e.Date.Day(), daySuffix, e.Date.Month().String()[:3], e.Date.Weekday().String()[:3], style_reset, emoji, e.Description)
+            fmt.Printf("%s%s%2d%s %s, %s %s: %s %s", e.DisplayColor, e.DisplayBgColor, e.Date.Day(), daySuffix, e.Date.Month().String()[:3], e.Date.Weekday().String()[:3], style_reset, displayEmoji, e.Description)
+
             if e.IsBirthday && !e.BirthDate.IsZero() {
                 age := cfg.TargetTime.Year() - e.BirthDate.Year()
                 if cfg.TargetTime.Month() < e.BirthDate.Month() ||
@@ -290,9 +328,11 @@ func PrintMultiMonthCalendar(cfg Config, startMonth time.Month, startYear int, a
                     fmt.Printf(" (Age: %d)", age)
                 }
             }
+
             eventDayStart := time.Date(e.Date.Year(), e.Date.Month(), e.Date.Day(), 0, 0, 0, 0, cfg.TargetTime.Location())
             todayStart := time.Date(cfg.TargetTime.Year(), cfg.TargetTime.Month(), cfg.TargetTime.Day(), 0, 0, 0, 0, cfg.TargetTime.Location())
             daysDiff := int(eventDayStart.Sub(todayStart).Hours() / 24)
+
             if daysDiff == 0 {
                 fmt.Printf(" %s(Today)%s", fg_blue, style_reset)
             } else if daysDiff > 0 {
@@ -303,8 +343,9 @@ func PrintMultiMonthCalendar(cfg Config, startMonth time.Month, startYear int, a
             fmt.Println()
         }
     }
+
     if !foundEvents {
         fmt.Println("No events in the displayed period.")
     }
-    // fmt.Println()
 }
+
