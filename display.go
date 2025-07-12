@@ -336,7 +336,7 @@ func PrintEventList(cfg Config, startMonth time.Month, startYear int, allEvents 
             if daysDiff == 0 {
                 fmt.Printf(" %s(Today)%s", fg_blue, style_reset)
             } else if daysDiff > 0 {
-                fmt.Printf(" %s(In %s%d%s%s day%s)", fg_green, style_bold, daysDiff, style_reset, fg_green, pluralS(daysDiff))
+                fmt.Printf(" %s(In %s%d%s%s day%s)%s", fg_green, style_bold, daysDiff, style_reset, fg_green, pluralS(daysDiff), style_reset)
             } else {
                 fmt.Printf(" %s(%d day%s ago)%s", fg_blue, -daysDiff, pluralS(-daysDiff), style_reset)
             }
