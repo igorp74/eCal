@@ -40,3 +40,8 @@ A single month
 6 months view
 
 ![image](https://github.com/user-attachments/assets/e63b72c4-4889-4831-8c5a-71307b990eea)
+
+12 months view
+
+<img width="1862" height="769" alt="image" src="https://github.com/user-attachments/assets/ec830d4f-6d6f-4389-9dc6-89fa92790fa4" />
+
