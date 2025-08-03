@@ -18,3 +18,8 @@ Inspired by win Calendar application by Horst Schaeffer https://www.horstmuc.de/
 | `-week int` | Week number for the calendar (1-53). If used with `-year`, overrides `-month`| |
 | `-weeknumbers` | Show week numbers. | `true` |
 | `-year int` | Year for the calendar. Also used with `-week`. | current year |
+
+
+# Documentation
+* [⚙️ Build](https://github.com/igorp74/eCal/wiki/%E2%9A%99%EF%B8%8F-Build)
+* [🎬 Examples](https://github.com/igorp74/eCal/wiki/%F0%9F%8E%AC-Examples)
