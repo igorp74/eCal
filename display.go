@@ -233,7 +233,6 @@ func PrintCalendar(cfg Config, startMonth time.Month, startYear int, allEvents [
         }
     }
 
-    // fmt.Println() // Add an empty line before print calendar(s)
     // Print months in rows of `monthsPerRow`
     for i := 0; i < cfg.NumMonths; i += monthsPerRow {
         for lineIdx := 0; lineIdx < maxHeight; lineIdx++ {
@@ -263,8 +262,7 @@ func PrintCalendar(cfg Config, startMonth time.Month, startYear int, allEvents [
 
 // PrintEventList renders a combined event list for the displayed period.
 func PrintEventList(cfg Config, startMonth time.Month, startYear int, allEvents []Event) {
-    fmt.Printf("%sEvents for displayed period:%s\n", style_bold, style_reset)
-    foundEvents := false
+    // foundEvents := false
     uniqueEventsForList := make(map[string]Event)
 
     // Determine the end month and year of the display range
@@ -296,8 +294,10 @@ func PrintEventList(cfg Config, startMonth time.Month, startYear int, allEvents 
         return sortedUniqueEvents[i].Date.Before(sortedUniqueEvents[j].Date)
     })
 
+
     if len(sortedUniqueEvents) > 0 {
-        foundEvents = true
+        fmt.Printf("%sEvents:%s\n", style_bold, style_reset)
+        // foundEvents = true
         for _, e := range sortedUniqueEvents {
             daySuffix := "th"
             switch e.Date.Day() {
@@ -344,8 +344,8 @@ func PrintEventList(cfg Config, startMonth time.Month, startYear int, allEvents 
         }
     }
 
-    if !foundEvents {
-        fmt.Println("No events in the displayed period.")
-    }
+    // if !foundEvents {
+    //     fmt.Println("No events for this time range")
+    // }
 }
 
