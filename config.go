@@ -58,8 +58,8 @@ type Event struct {
     Description      string
     Type             string    // e.g., "birthday", "ie", "us"
     IsAnnual         bool      // True if the event occurs annually without a fixed year in its rule
-    IsBirthday       bool      // True if the event type is "birthday" and a birth year is known
-    BirthDate        time.Time // Full birth date (YYYY-MM-DD) if available
+    IsAnniversary    bool      // True if the event type is "anniversary" and a birth year is known
+    AnniDate         time.Time // Full birth date (YYYY-MM-DD) if available
     RecurrenceRule   string    // Stores the rule string like "E+1", "MM/DOW#N" for reference
     SpecificYearRule bool      // True if the event rule itself specified a year (e.g., MM/DD/YYYY, MM/DD?YYYY)
     DisplayColor     string    // ANSI foreground color code for highlighting this event type
@@ -68,13 +68,17 @@ type Event struct {
 }
 
 // getDefaultEmoji returns a default emoji for a given event type.
-// This is used if no specific emoji is provided in the events.txt for an event.
+// This is used if no specific emoji is provided in the events.ini for an event.
 func getDefaultEmoji(tag string) string {
     switch tag {
     case "global":
         return "🌐"
+    case "anniversary":
+        return "📌"
     case "birthday":
         return "🎂"
+    case "hr":
+        return "🇭🇷"
     case "ie":
         return "🇮🇪"
     case "us":
@@ -83,7 +87,7 @@ func getDefaultEmoji(tag string) string {
         return "🏖️"
     case "church":
         return "✝️"
-    case "fun": // Added for "fun" events like Halloween, Valentine's Day
+    case "fun":
         return "🎉"
     default:
         return "📅"

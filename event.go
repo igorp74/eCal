@@ -30,10 +30,10 @@ var (
 
 // parseEventDate attempts to parse a date string from an event file.
 // yearContext is the year for which annual events should be resolved.
-// Returns: parsedDate (for yearContext), isAnnual, isBirthdayCandidate, birthDate (if present), recurrenceRule, specificYearInRule, error
+// Returns: parsedDate (for yearContext), isAnnual, isAnniversaryCandidate, birthDate (if present), recurrenceRule, specificYearInRule, error
 func parseEventDate(dateStr string, yearContext int) (time.Time, bool, bool, time.Time, string, bool, error) {
-    var parsedDate, birthDateVal time.Time
-    var isAnnual, isBirthdayCandidate, specificYearInRule bool
+    var parsedDate, anniDateVal time.Time
+    var isAnnual, isAnniversaryCandidate, specificYearInRule bool
     var recurrenceRule string
 
     // 1. Easter relative: E, E+N, E-N
@@ -140,10 +140,10 @@ func parseEventDate(dateStr string, yearContext int) (time.Time, bool, bool, tim
         }
         parsedDate = time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
         isAnnual = false
-        isBirthdayCandidate = true
-        birthDateVal = parsedDate
+        isAnniversaryCandidate = true
+        anniDateVal = parsedDate
         specificYearInRule = true
-        return parsedDate, isAnnual, isBirthdayCandidate, birthDateVal, "", specificYearInRule, nil
+        return parsedDate, isAnnual, isAnniversaryCandidate, anniDateVal, "", specificYearInRule, nil
     }
 
     // 5. ISO-like Date: DD-MM-YYYY
@@ -156,10 +156,10 @@ func parseEventDate(dateStr string, yearContext int) (time.Time, bool, bool, tim
         }
         parsedDate = time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
         isAnnual = false
-        isBirthdayCandidate = true
-        birthDateVal = parsedDate
+        isAnniversaryCandidate = true
+        anniDateVal = parsedDate
         specificYearInRule = true
-        return parsedDate, isAnnual, isBirthdayCandidate, birthDateVal, "", specificYearInRule, nil
+        return parsedDate, isAnnual, isAnniversaryCandidate, anniDateVal, "", specificYearInRule, nil
     }
 
     return time.Time{}, false, false, time.Time{}, "", false, fmt.Errorf("unknown date format: '%s'", dateStr)
@@ -200,6 +200,7 @@ func LoadEvents(filePath string, yearContext int) ([]Event, error) {
 
         // Extract the bracketed configuration part and the remaining description
         bracketMatches := reBracketedPart.FindStringSubmatch(descPart)
+
         if len(bracketMatches) == 3 {
             bracketContent := bracketMatches[1]      // e.g., "type, fg_color, bg_color, emoji"
             eventDesc = strings.TrimSpace(bracketMatches[2]) // The actual description after brackets
@@ -242,7 +243,7 @@ func LoadEvents(filePath string, yearContext int) ([]Event, error) {
             fmt.Fprintf(os.Stderr, "Warning (line %d): Event description format unexpected, treating as plain description: %s\n", lineNumber, descPart)
         }
 
-        parsedDate, isAnnual, isBdayCandidate, bDateVal, recRule, specYearRule, err := parseEventDate(dateStr, yearContext)
+        parsedDate, isAnnual, isBdayCandidate, aDateVal, recRule, specYearRule, err := parseEventDate(dateStr, yearContext)
         if err != nil {
             fmt.Fprintf(os.Stderr, "Warning (line %d): Skipping event due to date parse error ('%s'): %v\n", lineNumber, dateStr, err)
             continue
@@ -250,16 +251,16 @@ func LoadEvents(filePath string, yearContext int) ([]Event, error) {
 
         // Finalize event date and birthday status
         actualEventDate := parsedDate
-        isActualBirthday := strings.ToLower(eventType) == "birthday" && isBdayCandidate && !bDateVal.IsZero()
+        isActualAnniversary := (strings.ToLower(eventType) == "birthday" || strings.ToLower(eventType) == "anniversary") && isBdayCandidate && !aDateVal.IsZero()
 
         // If it's an annual event (not fixed to a specific year by its rule),
         // its date should be in the yearContext.
         // If it has a specific year in its rule (specYearRule=true), its date is fixed.
-        // For birthdays, bDateVal holds the birth year. The event occurs annually.
-        if isActualBirthday {
-            // Birthday occurs on bDateVal.Month and bDateVal.Day in yearContext
-            actualEventDate = time.Date(yearContext, bDateVal.Month(), bDateVal.Day(), 0, 0, 0, 0, time.UTC)
-            isAnnual = true // Birthdays are effectively annual occurrences
+        // For birthdays, aDateVal holds the birth year. The event occurs annually.
+        if isActualAnniversary {
+            // Anniversary occurs on aDateVal.Month and aDateVal.Day in yearContext
+            actualEventDate = time.Date(yearContext, aDateVal.Month(), aDateVal.Day(), 0, 0, 0, 0, time.UTC)
+            isAnnual = true // Anniversarys are effectively annual occurrences
         } else if isAnnual && actualEventDate.Year() != yearContext {
             // Ensure annual non-birthday events are set for the correct yearContext
             actualEventDate = time.Date(yearContext, actualEventDate.Month(), actualEventDate.Day(), 0, 0, 0, 0, time.UTC)
@@ -274,8 +275,8 @@ func LoadEvents(filePath string, yearContext int) ([]Event, error) {
             Description:      eventDesc,
             Type:             eventType,
             IsAnnual:         isAnnual,
-            IsBirthday:       isActualBirthday,
-            BirthDate:        bDateVal, // Store the original birth date
+            IsAnniversary:    isActualAnniversary,
+            AnniDate:         aDateVal, // Store the original birth date
             RecurrenceRule:   recRule,
             SpecificYearRule: specYearRule,
             DisplayColor:     fgColor,   // Store the determined foreground color

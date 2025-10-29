@@ -267,10 +267,10 @@ func PrintEventList(cfg Config, startMonth time.Month, startYear int, allEvents 
 
     // Determine the end month and year of the display range
     endMonth := time.Month((int(startMonth)-1+cfg.NumMonths-1)%12 + 1)
-    endYear := startYear + ((int(startMonth)-1+cfg.NumMonths-1)/12)
+    endYear  := startYear + ((int(startMonth)-1+cfg.NumMonths-1)/12)
 
     startDate := time.Date(startYear, startMonth, 1, 0, 0, 0, 0, cfg.TargetTime.Location())
-    endDate := time.Date(endYear, endMonth, 1, 0, 0, 0, 0, cfg.TargetTime.Location()).AddDate(0, 1, -1) // Last day of the end month
+    endDate   := time.Date(endYear, endMonth, 1, 0, 0, 0, 0, cfg.TargetTime.Location()).AddDate(0, 1, -1) // Last day of the end month
 
     for _, e := range allEvents {
         eventDate := time.Date(e.Date.Year(), e.Date.Month(), e.Date.Day(), 0, 0, 0, 0, cfg.TargetTime.Location())
@@ -278,6 +278,7 @@ func PrintEventList(cfg Config, startMonth time.Month, startYear int, allEvents 
         if (eventDate.Equal(startDate) || eventDate.After(startDate)) && (eventDate.Equal(endDate) || eventDate.Before(endDate)) {
             dateOnlyStr := time.Date(e.Date.Year(), e.Date.Month(), e.Date.Day(), 0, 0, 0, 0, e.Date.Location()).Format("2006-01-02")
             compositeKey := dateOnlyStr + "::" + e.Description
+
             if _, exists := uniqueEventsForList[compositeKey]; !exists {
                 uniqueEventsForList[compositeKey] = e
             }
@@ -318,14 +319,26 @@ func PrintEventList(cfg Config, startMonth time.Month, startYear int, allEvents 
             // Use e.DisplayColor and e.DisplayBgColor for the event list output as well
             fmt.Printf("%s%s%2d%s %s, %s %s: %s %s", e.DisplayColor, e.DisplayBgColor, e.Date.Day(), daySuffix, e.Date.Month().String()[:3], e.Date.Weekday().String()[:3], style_reset, displayEmoji, e.Description)
 
-            if e.IsBirthday && !e.BirthDate.IsZero() {
-                age := cfg.TargetTime.Year() - e.BirthDate.Year()
-                if cfg.TargetTime.Month() < e.BirthDate.Month() ||
-                    (cfg.TargetTime.Month() == e.BirthDate.Month() && cfg.TargetTime.Day() < e.BirthDate.Day()) {
+            if e.IsAnniversary && !e.AnniDate.IsZero() {
+                 // Relative age (relative to displayed calendar and year)
+                // --------------------------------------------------------
+                age := startYear - e.AnniDate.Year()
+
+                  // Absolute age (it is always from start to today's year)
+                 // --------------------------------------------------------
+                // age := cfg.TargetTime.Year() - e.AnniDate.Year()
+
+                if cfg.TargetTime.Month() < e.AnniDate.Month() ||
+                    (cfg.TargetTime.Month() == e.AnniDate.Month() && cfg.TargetTime.Day() < e.AnniDate.Day()) {
                     age--
                 }
                 if age >= 0 {
-                    fmt.Printf(" (Age: %d)", age)
+                    if e.Type == "birthday" {
+                        fmt.Printf(" (Age: %d)", age)
+                    }
+                    if e.Type == "anniversary" {
+                        fmt.Printf(" (%d)", age)
+                    }
                 }
             }
 
