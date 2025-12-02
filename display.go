@@ -300,15 +300,21 @@ func PrintEventList(cfg Config, startMonth time.Month, startYear int, allEvents 
         fmt.Printf("%sEvents:%s\n", style_bold, style_reset)
         // foundEvents = true
         for _, e := range sortedUniqueEvents {
-            daySuffix := "th"
-            switch e.Date.Day() {
-            case 1, 21, 31:
-                daySuffix = "st"
-            case 2, 22:
-                daySuffix = "nd"
-            case 3, 23:
-                daySuffix = "rd"
-            }
+            // daySuffix := "th"
+            // switch e.Date.Day() {
+            // case 1, 21, 31:
+            //     daySuffix = "st"
+            // case 2, 22:
+            //     daySuffix = "nd"
+            // case 3, 23:
+            //     daySuffix = "rd"
+            // }
+
+            show_days_counter := 1
+
+            eventDayStart := time.Date(e.Date.Year(), e.Date.Month(), e.Date.Day(), 0, 0, 0, 0, cfg.TargetTime.Location())
+            todayStart := time.Date(cfg.TargetTime.Year(), cfg.TargetTime.Month(), cfg.TargetTime.Day(), 0, 0, 0, 0, cfg.TargetTime.Location())
+            daysDiff := int(eventDayStart.Sub(todayStart).Hours() / 24)
 
             // Use explicit emoji if provided, otherwise fall back to default based on type
             displayEmoji := e.Emoji
@@ -317,7 +323,7 @@ func PrintEventList(cfg Config, startMonth time.Month, startYear int, allEvents 
             }
 
             // Use e.DisplayColor and e.DisplayBgColor for the event list output as well
-            fmt.Printf("%s%s%2d%s %s, %s %s: %s %s", e.DisplayColor, e.DisplayBgColor, e.Date.Day(), daySuffix, e.Date.Month().String()[:3], e.Date.Weekday().String()[:3], style_reset, displayEmoji, e.Description)
+            // fmt.Printf(" %s%s%2d%s %s, %s %s: %s %s", e.DisplayColor, e.DisplayBgColor, e.Date.Day(), daySuffix, e.Date.Month().String()[:3], e.Date.Weekday().String()[:3], style_reset, displayEmoji, e.Description)
 
             if e.IsAnniversary && !e.AnniDate.IsZero() {
                  // Relative age (relative to displayed calendar and year)
@@ -333,27 +339,35 @@ func PrintEventList(cfg Config, startMonth time.Month, startYear int, allEvents 
                     age--
                 }
                 if age >= 0 {
+
+                    // Use e.DisplayColor and e.DisplayBgColor for the event list output as well
+                    fmt.Printf(" %s%s%s, %02d %s %4d%s: %s %s", e.DisplayColor, e.DisplayBgColor, e.Date.Weekday().String()[:3], e.Date.Day(), e.Date.Month().String()[:3], e.Date.Year(), style_reset, displayEmoji, e.Description)
+                    // fmt.Printf(" %s%s%s, %2d%s %s %4d%s: %s %s", e.DisplayColor, e.DisplayBgColor, e.Date.Weekday().String()[:3], e.Date.Day(), daySuffix, e.Date.Month().String()[:3], e.Date.Year(), style_reset, displayEmoji, e.Description)
+
                     if e.Type == "birthday" {
                         fmt.Printf(" (Age: %d)", age)
                     }
                     if e.Type == "anniversary" {
                         fmt.Printf(" (%d)", age)
                     }
+
+                } else {
+                    show_days_counter = 0
                 }
-            }
-
-            eventDayStart := time.Date(e.Date.Year(), e.Date.Month(), e.Date.Day(), 0, 0, 0, 0, cfg.TargetTime.Location())
-            todayStart := time.Date(cfg.TargetTime.Year(), cfg.TargetTime.Month(), cfg.TargetTime.Day(), 0, 0, 0, 0, cfg.TargetTime.Location())
-            daysDiff := int(eventDayStart.Sub(todayStart).Hours() / 24)
-
-            if daysDiff == 0 {
-                fmt.Printf(" %s(Today)%s", fg_blue, style_reset)
-            } else if daysDiff > 0 {
-                fmt.Printf(" %s(In %s%d%s%s day%s)%s", fg_green, style_bold, daysDiff, style_reset, fg_green, pluralS(daysDiff), style_reset)
             } else {
-                fmt.Printf(" %s(%d day%s ago)%s", fg_blue, -daysDiff, pluralS(-daysDiff), style_reset)
+                fmt.Printf(" %s%s%s, %02d %s %4d%s: %s %s", e.DisplayColor, e.DisplayBgColor, e.Date.Weekday().String()[:3], e.Date.Day(), e.Date.Month().String()[:3], e.Date.Year(), style_reset, displayEmoji, e.Description)
             }
-            fmt.Println()
+
+            if show_days_counter > 0 {
+                if daysDiff == 0 {
+                    fmt.Printf(" %s(Today)%s", fg_blue, style_reset)
+                } else if daysDiff > 0 {
+                    fmt.Printf(" %s(In %s%d%s%s day%s)%s", fg_green, style_bold, daysDiff, style_reset, fg_green, pluralS(daysDiff), style_reset)
+                } else {
+                    fmt.Printf(" %s(%s%d%s %sday%s ago)%s", fg_blue, style_bold, -daysDiff, style_reset, fg_blue, pluralS(-daysDiff), style_reset)
+                }
+                fmt.Println()
+            }
         }
     }
 
