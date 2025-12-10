@@ -34,13 +34,19 @@ func removeANSI(s string) string {
 // GetMonthViewLines returns the lines for a single month's calendar view as a slice of strings.
 func GetMonthViewLines(cfg Config, displayMonth time.Month, displayYear int, allEvents []Event) []string {
     var lines []string
+    var monthBlockActualVisibleWidth int
     firstOfMonth := time.Date(displayYear, displayMonth, 1, 0, 0, 0, 0, cfg.TargetTime.Location()) // Use target time's location for consistency
     lastOfMonth := firstOfMonth.AddDate(0, 1, -1)
     today := cfg.TargetTime // Use cfg.TargetTime for "today" consistency
 
     // Define the consistent visible width for the content area of a single month block.
     // Week Number Column (4 chars: " Wk " or " 22 ") + 7 Days (7 * 3 chars: " Mo ") = 4 + 21 = 25 visible characters.
-    const monthBlockActualVisibleWidth = 25
+
+    if cfg.ShowWeekNum {
+        monthBlockActualVisibleWidth = 25
+    } else {
+        monthBlockActualVisibleWidth = 23
+    }
 
     // Month/Year Header
     monthYearHeaderStr := fmt.Sprintf("%s %d", displayMonth.String(), displayYear)
@@ -68,7 +74,7 @@ func GetMonthViewLines(cfg Config, displayMonth time.Month, displayYear int, all
     if cfg.ShowWeekNum {
         headerLine += fmt.Sprintf("%s%3s%s ", fg_blue, "Wk", style_reset)
     } else {
-        headerLine += strings.Repeat(" ", 4) // Always 4 spaces for week number column alignment
+        headerLine += strings.Repeat(" ", 1) // Always 4 spaces for week number column alignment
     }
     // Day headers (7 * 3 = 21 visible characters)
     for _, h := range daysHeader {
@@ -126,10 +132,10 @@ func GetMonthViewLines(cfg Config, displayMonth time.Month, displayYear int, all
                 _, weekNo := time.Date(displayYear, displayMonth, dayForWeekCalc, 0, 0, 0, 0, cfg.TargetTime.Location()).ISOWeek()
                 rowStr += fmt.Sprintf("%s%3d%s ", fg_blue, weekNo, style_reset) // Format to 3 chars, plus 1 space -> 4 visible chars
             } else {
-                rowStr += strings.Repeat(" ", 4) // Padding for wk num column if empty
+                rowStr += strings.Repeat(" ", 1) // Padding for wk num column if empty
             }
         } else {
-            rowStr += strings.Repeat(" ", 4) // Always 4 spaces for week number column alignment
+            rowStr += strings.Repeat(" ", 1) // Always 4 spaces for week number column alignment
         }
 
         hasDaysInRow := false
@@ -202,10 +208,19 @@ func GetMonthViewLines(cfg Config, displayMonth time.Month, displayYear int, all
 // PrintCalendar renders multiple monthly calendars.
 func PrintCalendar(cfg Config, startMonth time.Month, startYear int, allEvents []Event) {
     // Constants for layout
-    const monthsPerRow = 3 // Number of months to display side-by-side
-    // Use the same content width as GetMonthViewLines
-    const monthBlockActualVisibleWidth = 25
-    const interCalendarSpace = 4 // Spaces between each calendar block in a row
+    var interCalendarSpace int // Spaces between each calendar block in a row
+    var monthBlockActualVisibleWidth int
+
+    // Define the consistent visible width for the content area of a single month block.
+    // Week Number Column (4 chars: " Wk " or " 22 ") + 7 Days (7 * 3 chars: " Mo ") = 4 + 21 = 25 visible characters.
+
+    if cfg.ShowWeekNum {
+        monthBlockActualVisibleWidth = 25
+        interCalendarSpace = 3
+    } else {
+        monthBlockActualVisibleWidth = 23
+        interCalendarSpace = 1
+    }
 
     var allMonthLines [][]string // Stores lines for each month: allMonthLines[monthIdx][lineIdx]
 
@@ -233,23 +248,23 @@ func PrintCalendar(cfg Config, startMonth time.Month, startYear int, allEvents [
         }
     }
 
-    // Print months in rows of `monthsPerRow`
-    for i := 0; i < cfg.NumMonths; i += monthsPerRow {
+    // Print months in rows of cfg.NumColumns 
+    for i := 0; i < cfg.NumMonths; i += cfg.NumColumns {
         for lineIdx := 0; lineIdx < maxHeight; lineIdx++ {
             rowOutput := ""
-            for j := range monthsPerRow {
+            for j := range cfg.NumColumns {
                 monthIdx := i + j
                 if monthIdx < cfg.NumMonths {
                     line := allMonthLines[monthIdx][lineIdx]
                     rowOutput += line
                     // Add inter-calendar spacing, but not after the last month in the row
-                    if j < monthsPerRow-1 {
+                    if j < cfg.NumColumns-1 {
                         rowOutput += strings.Repeat(" ", interCalendarSpace)
                     }
                 } else {
-                    // If fewer than monthsPerRow months in the last row, fill with spaces
+                    // If fewer than cfg.NumColumns  months in the last row, fill with spaces
                     rowOutput += strings.Repeat(" ", monthBlockActualVisibleWidth)
-                    if j < monthsPerRow-1 {
+                    if j < cfg.NumColumns-1 {
                         rowOutput += strings.Repeat(" ", interCalendarSpace)
                     }
                 }
@@ -339,23 +354,32 @@ func PrintEventList(cfg Config, startMonth time.Month, startYear int, allEvents 
                     age--
                 }
                 if age >= 0 {
+                    ageSuffix := "th"
+                    switch age{
+                    case 1, 21, 31:
+                        ageSuffix = "st"
+                    case 2, 22:
+                        ageSuffix = "nd"
+                    case 3, 23:
+                        ageSuffix = "rd"
+                    }
 
                     // Use e.DisplayColor and e.DisplayBgColor for the event list output as well
-                    fmt.Printf(" %s%s%s, %02d %s %4d%s: %s %s", e.DisplayColor, e.DisplayBgColor, e.Date.Weekday().String()[:3], e.Date.Day(), e.Date.Month().String()[:3], e.Date.Year(), style_reset, displayEmoji, e.Description)
+                    fmt.Printf(" %s%s%s, %02d %s %4d%s  %s %s", e.DisplayColor, e.DisplayBgColor, e.Date.Weekday().String()[:3], e.Date.Day(), e.Date.Month().String()[:3], e.Date.Year(), style_reset, displayEmoji, e.Description)
                     // fmt.Printf(" %s%s%s, %2d%s %s %4d%s: %s %s", e.DisplayColor, e.DisplayBgColor, e.Date.Weekday().String()[:3], e.Date.Day(), daySuffix, e.Date.Month().String()[:3], e.Date.Year(), style_reset, displayEmoji, e.Description)
 
                     if e.Type == "birthday" {
-                        fmt.Printf(" (Age: %d)", age)
+                        fmt.Printf(" (%d%s Birthday)", age, ageSuffix)
                     }
                     if e.Type == "anniversary" {
-                        fmt.Printf(" (%d)", age)
+                        fmt.Printf(" (%d%s Anniversary)", age, ageSuffix)
                     }
 
                 } else {
                     show_days_counter = 0
                 }
             } else {
-                fmt.Printf(" %s%s%s, %02d %s %4d%s: %s %s", e.DisplayColor, e.DisplayBgColor, e.Date.Weekday().String()[:3], e.Date.Day(), e.Date.Month().String()[:3], e.Date.Year(), style_reset, displayEmoji, e.Description)
+                fmt.Printf(" %s%s%s, %02d %s %4d%s  %s %s", e.DisplayColor, e.DisplayBgColor, e.Date.Weekday().String()[:3], e.Date.Day(), e.Date.Month().String()[:3], e.Date.Year(), style_reset, displayEmoji, e.Description)
             }
 
             if show_days_counter > 0 {

@@ -20,31 +20,33 @@ func main() {
         ShowWeekNum: true,
         TargetTime:  currentTime, // Reference time for age/countdown
         NumMonths:   1,           // Default to showing 1 month
+        NumColumns:  3,
         DisplayMode: DisplayBoth, // Default to showing both calendar and events
     }
 
     // Command-line flags
-    yearFlag := flag.Int("year", 0, "Year for the calendar (default: current year). Also used with -week.")
-    monthFlag := flag.Int("month", 0, "Month for the calendar (1-12) (default: current month).")
-    weekFlag := flag.Int("week", 0, "Week number for the calendar (1-53). If used with -year, overrides -month.")
-    monthsFlag := flag.Int("months", 1, "Number of months to display (1, 3, 6, or 12).") // New flag
-    displayFlag := flag.String("display", DisplayBoth, "What to display: 'calendar', 'events', or 'both' (default).") // New display flag
+    yearFlag    := flag.Int("y",  0, "Year for the calendar (default: current year). Also used with -week.")
+    monthFlag   := flag.Int("m",  0, "Month for the calendar (1-12) (default: current month).")
+    weekFlag    := flag.Int("w",  0, "Week number for the calendar (1-53). If used with -year, overrides -month.")
+    monthsFlag  := flag.Int("mn", 1, "Number of months to display (1, 3, 6, or 12).")
+    columnsFlag := flag.Int("c",  3, "Number of columns to display (1, 3, 4, 6, or 12).")
+    displayFlag := flag.String("d", DisplayBoth, "What to display: 'calendar', 'events', or 'both' (default).") // New display flag
 
-    flag.BoolVar(&cfg.MondayFirst, "mondayFirst", cfg.MondayFirst, "Set Monday as the first day of the week.")
-    flag.StringVar(&cfg.EventsFile, "events", cfg.EventsFile, "Path to the events file.")
-    flag.BoolVar(&cfg.ShowWeekNum, "weeknumbers", cfg.ShowWeekNum, "Show week numbers.")
+    flag.BoolVar(&cfg.MondayFirst,  "monday", cfg.MondayFirst, "Set Monday as the first day of the week.")
+    flag.StringVar(&cfg.EventsFile, "f",      cfg.EventsFile,  "Path to the events file.")
+    flag.BoolVar(&cfg.ShowWeekNum,  "wk",     cfg.ShowWeekNum, "Show week numbers.")
 
     flag.Usage = func() {
         fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
         fmt.Fprintf(os.Stderr, " %s [options]\n\nOptions:\n", os.Args[0])
         flag.PrintDefaults()
-        fmt.Fprintf(os.Stderr, "\nExamples:\n")
-        fmt.Fprintf(os.Stderr, "  %s -year 2024 -month 12\n", os.Args[0])
-        fmt.Fprintf(os.Stderr, "  %s -year 2024 -week 50\n", os.Args[0])
-        fmt.Fprintf(os.Stderr, "  %s -events my_holidays.txt -mondayFirst\n", os.Args[0])
-        fmt.Fprintf(os.Stderr, "  %s -month 7 -year 2025 -months 3\n", os.Args[0])
-        fmt.Fprintf(os.Stderr, "  %s -display calendar\n", os.Args[0]) // New example
-        fmt.Fprintf(os.Stderr, "  %s -display events -events my_events.txt\n", os.Args[0]) // New example
+        fmt.Fprintf(os.Stderr, "\n\033[1mExamples:\033[0m\n")
+        fmt.Fprintf(os.Stderr, "  %s -y 2024 -m 12\n", os.Args[0])
+        fmt.Fprintf(os.Stderr, "  %s -y 2024 -w 50\n", os.Args[0])
+        fmt.Fprintf(os.Stderr, "  %s -f my_holidays.txt -monday\n", os.Args[0])
+        fmt.Fprintf(os.Stderr, "  %s -m 7 -y 2025 -mn 3\n", os.Args[0])
+        fmt.Fprintf(os.Stderr, "  %s -d calendar\n", os.Args[0]) // New example
+        fmt.Fprintf(os.Stderr, "  %s -d events -f my_events.txt\n", os.Args[0]) // New example
     }
     flag.Parse()
 
@@ -76,7 +78,7 @@ func main() {
         }
     }
 
-    // Process new months flag
+    // Process months flag
     if *monthsFlag != 0 {
         if *monthsFlag == 1 || *monthsFlag == 3 || *monthsFlag == 6 || *monthsFlag == 12 {
             cfg.NumMonths = *monthsFlag
@@ -87,7 +89,20 @@ func main() {
         }
     }
 
-    // Process new display flag
+
+    // Process months flag
+    if *columnsFlag != 0 {
+        if *columnsFlag == 1 || *columnsFlag == 2 || *columnsFlag == 3|| *columnsFlag == 4 || *columnsFlag == 6 || *columnsFlag == 12 {
+            cfg.NumColumns = *columnsFlag
+        } else {
+            fmt.Fprintf(os.Stderr, "Error: Invalid columns value %d. Must be 1, 2, 3, 4, 6, or 12.\n", *columnsFlag)
+            flag.Usage()
+            os.Exit(1)
+        }
+    }
+
+
+    // Process display flag
     switch *displayFlag {
     case DisplayCalendar, DisplayEvents, DisplayBoth:
         cfg.DisplayMode = *displayFlag

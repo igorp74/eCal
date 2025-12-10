@@ -47,8 +47,9 @@ type Config struct {
     EventsFile  string
     ShowWeekNum bool
     TargetTime  time.Time // Current time for age/countdown calculations
-    NumMonths   int       // New field: Number of months to display (1, 3, 6, 12)
-    DisplayMode string    // New field: "calendar", "events", or "both"
+    NumMonths   int       // Number of months to display (1, 3, 6, 12)
+    NumColumns  int       // Number of months to display (1, 2, 3, 3, 6, 12)
+    DisplayMode string    // "calendar", "events", or "both"
 }
 
 // Event represents a calendar event
