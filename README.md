@@ -10,7 +10,7 @@ Inspired by win Calendar application by Horst Schaeffer https://www.horstmuc.de/
 **Options**:
 |Flag|Description|Default|
 |:--|:--|--:|
-| `-c string` | Number of columns to display (1, 2, 3, 4, 6, or 12) | 1 |
+| `-c string` | Number of columns to display (1, 2, 3, 4, 6, or 12) | 3 |
 | `-d string` | What to display: 'calendar', 'events', or 'both' | "both" |
 | `-f string` | Path to the events file. | `"events.txt"` |
 | `-m int` | Month for the calendar (1-12) | current month |
